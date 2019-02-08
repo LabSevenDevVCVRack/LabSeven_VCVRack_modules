@@ -11,8 +11,7 @@ LabSeven modules are compatible with VCV Rack 0.6.X. releases.
 
 If you like the modules you can support the development by making a donation, it will be appreciated!. Here's the link: [DONATE](https://www.paypal.me/labseven/)
 
-![AS](http://labseven.prospectum.com/vco-3340_blue.png)
-![AS](http://labseven.prospectum.com/vco-3340_gray.png)
+<img src="http://labseven.prospectum.com/vco-3340_blue.png" height="190"><img src="http://labseven.prospectum.com/vco-3340_gray.png" height="190">
 
 # LabSeven modules
 
