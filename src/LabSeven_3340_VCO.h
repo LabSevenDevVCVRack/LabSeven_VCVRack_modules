@@ -5,10 +5,7 @@
 #include <float.h>
 
 #define _USE_MATH_DEFINES
-
 using namespace std;
-
-#include "LabSeven_3340_VCO_noise.h"
 
 namespace LabSeven
 {
@@ -200,6 +197,49 @@ namespace LabSeven
             }
         };
 
+        struct TLS3340NoiseSource
+        {
+            private:
+                static const size_t dataLengthSamples = 960527;
+                float LS3340Noise[dataLengthSamples];
+                unsigned long currentPosition;
+            public:
+                TLS3340NoiseSource()
+                {
+                    //initialize noise array
+                    for (size_t i=0;i<dataLengthSamples;i++)
+                    {
+                        LS3340Noise[i] = 0.0;
+                    }
+
+                    //LOAD NOISE SAMPLE
+                    ifstream f;
+                    f.open(assetPlugin(plugin, "res/LabSeven_3340_noise.pcm"), ios::binary);
+                    f.read((char*)&(LS3340Noise[0]),dataLengthSamples*sizeof(float));
+                    f.close();
+
+                    //randomize start position
+                    //makes phasing unlikely in case multiple 3340s are used together
+                    currentPosition = (unsigned long)round(((double) rand() / (RAND_MAX))*(double)(dataLengthSamples-1));
+                }
+                inline float getNextNoiseSample()
+                {
+                    if (dataLengthSamples == 0)
+                    {
+                        return 0.0;
+                    }
+                    else
+                    {
+                        //move/wrap currentPosition
+                        currentPosition++;
+                        if (currentPosition >= dataLengthSamples)
+                            currentPosition -= dataLengthSamples;
+
+                        return LS3340Noise[currentPosition];
+                    }
+                }
+        };
+
         struct TLS3340VCOSINCLUT
         {
             private:
@@ -273,7 +313,7 @@ namespace LabSeven
             TLS3340VCOImpulseTrain suboscillatorImpulses;
             TLS3340VCOImpulseTrain sawImpulses;
 
-            LabSeven::LS3340::TLS3340NoiseSource noise;
+            TLS3340NoiseSource noise;
 
             double vcoFrequencyHz;
             double sampleRateHzInternal;
