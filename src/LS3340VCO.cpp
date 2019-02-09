@@ -1,6 +1,4 @@
 #include "LabSeven.hpp"
-
-#include "LabSeven_3340_VCO_noise.h"
 #include "LabSeven_3340_VCO.h"
 #include <time.h>
 
