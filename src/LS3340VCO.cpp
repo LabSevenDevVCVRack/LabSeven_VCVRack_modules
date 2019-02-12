@@ -82,14 +82,8 @@ void LS3340VCO::step()
     }
 
 	//get pitch and pitch mod input
-    if (inputs[IN_MOD].active)
-    {
-        pitch = inputs[IN_PITCH].value +  pow(2,2.25*0.2*inputs[IN_MOD].value * params[PARAM_MOD].value);
-    }
-    else
-    {
-        pitch = inputs[IN_PITCH].value;
-    }
+    pitch = inputs[IN_PITCH].value;
+    pitch +=  pow(2,2.25*0.2*inputs[IN_MOD].value * params[PARAM_MOD].value);
 
     //set rangeFactor
 	rangeFactor = params[PARAM_RANGE].value;
@@ -130,15 +124,12 @@ void LS3340VCO::step()
 
 	
 	//update suboscillator
-    if (inputs[IN_SUBOSCSELECT].active)
+    switch((int)inputs[IN_SUBOSCSELECT].value)
     {
-        switch((int)inputs[IN_SUBOSCSELECT].value)
-        {
-            case 1: vco.setSuboscillatorMode(0); break;
-            case 2: vco.setSuboscillatorMode(1); break;
-            case 3: vco.setSuboscillatorMode(2); break;
-            default: vco.setSuboscillatorMode((unsigned short)params[PARAM_SUBOSCRATIO].value);
-        }
+        case 1: vco.setSuboscillatorMode(0); break;
+        case 2: vco.setSuboscillatorMode(1); break;
+        case 3: vco.setSuboscillatorMode(2); break;
+        default: vco.setSuboscillatorMode((unsigned short)params[PARAM_SUBOSCRATIO].value);
     }
 
 	//pulse width modulation
