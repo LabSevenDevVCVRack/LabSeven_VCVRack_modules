@@ -60,7 +60,7 @@ struct LS3340VCO : Module
     float sampleTimeCurrent = 0.0;
     float sampleRateCurrent = 0.0;
 
-    double maxPitch;
+    double pitch,maxPitch,rangeFactor;
 	// For more advanced Module features, read Rack's engine.hpp header file
 	// - toJson, fromJson: serialization of internal data
 	// - onSampleRateChange: event triggered by a change of sample rate
@@ -76,10 +76,12 @@ void LS3340VCO::step()
         sampleTimeCurrent = engineGetSampleTime();
         sampleRateCurrent = 1.0/sampleTimeCurrent;
         vco.setSamplerateExternal(sampleRateCurrent);
+		
+		maxPitch = sampleRateCurrent*0.45;
+    	if (maxPitch > 40000) maxPitch = 40000; //high value so that suboscillator can go up to 10kHz
     }
 
 	//get pitch and pitch mod input
-    double pitch;
     if (inputs[IN_MOD].active)
     {
         pitch = inputs[IN_PITCH].value +  pow(2,2.25*0.2*inputs[IN_MOD].value * params[PARAM_MOD].value);
@@ -90,7 +92,7 @@ void LS3340VCO::step()
     }
 
     //set rangeFactor
-	double rangeFactor = params[PARAM_RANGE].value;
+	rangeFactor = params[PARAM_RANGE].value;
 	switch ((int)rangeFactor)
 	{
 		case 0: rangeFactor = 0.5; break;
@@ -119,13 +121,11 @@ void LS3340VCO::step()
 	
     //set pitch
     //TODO: Clean up this paragraph!!!
-    maxPitch = sampleRateCurrent*0.45;
-    if (maxPitch > 40000) maxPitch = 40000; //high value so that suboscillator can go up to 10kHz
-	pitch = 261.626 * pow(2.0, pitch) * rangeFactor;
+	pitch = 261.626f * pow(2.0, pitch) * rangeFactor;
     pitch = clamp(pitch, 0.01f, maxPitch);
     //simulate the jitter observed in the hardware synth
     //use values > 0.02 for dirtier sound
-    pitch *= 1.0+0.02*((double) rand() / (RAND_MAX) -0.5);
+    pitch *= 1.0+0.02*((double) rand() / (RAND_MAX)-0.5);
     vco.setFrequency(pitch);
 
 	
