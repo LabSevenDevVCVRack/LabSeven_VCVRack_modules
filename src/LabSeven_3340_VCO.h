@@ -121,7 +121,7 @@ namespace LabSeven
 
         struct TLS3340VCOImpulseTrain
         {
-            const static int maxNbrImpulsesPerTrain = 8*2; //depends on impulse length!
+            const static int maxNbrImpulsesPerTrain = 50; //depends on impulse length!
             TLS3340ImpulseParameters train[maxNbrImpulsesPerTrain];
 
             //runtime stuff
@@ -130,7 +130,7 @@ namespace LabSeven
             int currentIndex;
             double impulseCounter;
 
-            //needed for the leaky integrator that turns the lut impulse into the SH impulse
+            //needed for the leaky integrator that turns the lut impulse into the 340 impulse
             double integrationBuffer;
 
             TLS3340VCOImpulseTrain()

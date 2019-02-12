@@ -1,4 +1,5 @@
 #include "LabSeven.hpp"
+
 #include "LabSeven_3340_VCO.h"
 #include <time.h>
 
@@ -77,11 +78,17 @@ void LS3340VCO::step()
         vco.setSamplerateExternal(sampleRateCurrent);
     }
 
-    //TODO: only call setter for parameters if they have changed (minor performance improvement)
-
 	//get pitch and pitch mod input
-    double pitch = inputs[IN_PITCH].value +  pow(2,2.25*0.2*inputs[IN_MOD].value * params[PARAM_MOD].value);
-	
+    double pitch;
+    if (inputs[IN_MOD].active)
+    {
+        pitch = inputs[IN_PITCH].value +  pow(2,2.25*0.2*inputs[IN_MOD].value * params[PARAM_MOD].value);
+    }
+    else
+    {
+        pitch = inputs[IN_PITCH].value;
+    }
+
     //set rangeFactor
 	double rangeFactor = params[PARAM_RANGE].value;
 	switch ((int)rangeFactor)
@@ -93,38 +100,45 @@ void LS3340VCO::step()
 		default: rangeFactor = 1.0;
 	}
 
-    //select range
-    int rangeSelect = (int)round(inputs[IN_RANGE].value*0.6);
-    switch (rangeSelect)
+    //range modulation
+    if (inputs[IN_RANGE].active)
     {
-        case -3: rangeFactor /= 8.0; break;
-        case -2: rangeFactor /= 4.0; break;
-        case -1: rangeFactor /= 2.0; break;
-        case  0: break; //no change
-        case  1: rangeFactor *= 2.0; break;
-        case  2: rangeFactor *= 4.0; break;
-        case  3: rangeFactor *= 8.0; break;
+        int rangeSelect = (int)round(inputs[IN_RANGE].value*0.6);
+        switch (rangeSelect)
+        {
+            case -3: rangeFactor /= 8.0; break;
+            case -2: rangeFactor /= 4.0; break;
+            case -1: rangeFactor /= 2.0; break;
+            case  0: break; //no change
+            case  1: rangeFactor *= 2.0; break;
+            case  2: rangeFactor *= 4.0; break;
+            case  3: rangeFactor *= 8.0; break;
+        }
+        if (rangeFactor > 16.0) rangeFactor = 16.0;
     }
-
-    if (rangeFactor > 16.0) rangeFactor = 16.0;
 	
     //set pitch
+    //TODO: Clean up this paragraph!!!
     maxPitch = sampleRateCurrent*0.45;
     if (maxPitch > 40000) maxPitch = 40000; //high value so that suboscillator can go up to 10kHz
 	pitch = 261.626 * pow(2.0, pitch) * rangeFactor;
     pitch = clamp(pitch, 0.01f, maxPitch);
     //simulate the jitter observed in the hardware synth
     //use values > 0.02 for dirtier sound
-    pitch *= 1.0+0.02*((double) rand() / (RAND_MAX));
+    pitch *= 1.0+0.02*((double) rand() / (RAND_MAX) -0.5);
     vco.setFrequency(pitch);
+
 	
 	//update suboscillator
-    switch((int)inputs[IN_SUBOSCSELECT].value)
+    if (inputs[IN_SUBOSCSELECT].active)
     {
-        case 1: vco.setSuboscillatorMode(0); break;
-        case 2: vco.setSuboscillatorMode(1); break;
-        case 3: vco.setSuboscillatorMode(2); break;
-        default: vco.setSuboscillatorMode((unsigned short)params[PARAM_SUBOSCRATIO].value);
+        switch((int)inputs[IN_SUBOSCSELECT].value)
+        {
+            case 1: vco.setSuboscillatorMode(0); break;
+            case 2: vco.setSuboscillatorMode(1); break;
+            case 3: vco.setSuboscillatorMode(2); break;
+            default: vco.setSuboscillatorMode((unsigned short)params[PARAM_SUBOSCRATIO].value);
+        }
     }
 
 	//pulse width modulation
@@ -166,6 +180,7 @@ void LS3340VCO::step()
         vco.getNextBlock(&nextFrame,1);
     }
 
+    //TODO: Activate/deactivate interpolation if outs are not active
     outputs[OUT_SQUARE].value     = scaling * nextFrame.square;
     outputs[OUT_SAW].value        = scaling * nextFrame.sawtooth;
     outputs[OUT_SUB].value        = scaling * nextFrame.subosc;
