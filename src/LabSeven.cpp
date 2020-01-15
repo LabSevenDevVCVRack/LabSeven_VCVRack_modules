@@ -1,18 +1,15 @@
 #include "LabSeven.hpp"
 
-Plugin *plugin;
+Plugin *pluginInstance;
 
 void init(Plugin *p)
 {
 
+	pluginInstance = p;
 
-	plugin = p;
-	p->slug = TOSTRING(SLUG);
-	p->version = TOSTRING(VERSION);
+	// Add all Models defined throughout the pluginInstance
+  p->addModel(modelLS3340VCO);
 
-	// Add all Models defined throughout the plugin
-    p->addModel(modelLS3340VCO);
-
-	// Any other plugin initialization may go here.
+	// Any other pluginInstance initialization may go here.
 	// As an alternative, consider lazy-loading assets and lookup tables when your module is created to reduce startup times of Rack.
 }

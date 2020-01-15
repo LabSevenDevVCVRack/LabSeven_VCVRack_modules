@@ -214,7 +214,7 @@ namespace LabSeven
 
                     //LOAD NOISE SAMPLE
                     ifstream f;
-                    f.open(assetPlugin(plugin, "res/LabSeven_3340_noise.pcm"), ios::binary);
+                    f.open(asset::plugin(pluginInstance, "res/LabSeven_3340_noise.pcm"), ios::binary);
                     f.read((char*)&(LS3340Noise[0]),dataLengthSamples*sizeof(float));
                     f.close();
 

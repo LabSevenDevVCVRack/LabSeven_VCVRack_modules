@@ -7,7 +7,7 @@ See LICENSE.txt for license information.
 
 ### Compatibility
 
-LabSeven modules are compatible with VCV Rack 0.6.X. releases.
+LabSeven modules are compatible with VCV Rack 1.X releases.
 
 If you like the modules you can support the development by making a donation, it will be appreciated!. Here's the link: [DONATE](https://www.paypal.me/labseven/)
 
@@ -63,5 +63,8 @@ Algorithmic (internal) features
 
 ### Version 0.6.1 (2019-02-08)
 inital release
+
+### Version 1.0.0 (2020-01-16)
+V1 Migration
 
 ### Enjoy!
