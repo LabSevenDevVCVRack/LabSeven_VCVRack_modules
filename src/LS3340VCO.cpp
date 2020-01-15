@@ -141,7 +141,7 @@ void LS3340VCO::process(const ProcessArgs& args)
         case 1: vco.setSuboscillatorMode(0); break;
         case 2: vco.setSuboscillatorMode(1); break;
         case 3: vco.setSuboscillatorMode(2); break;
-        default: vco.setSuboscillatorMode((unsigned short)params[PARAM_SUBOSCRATIO].getValue());
+        default: vco.setSuboscillatorMode(2 - (unsigned short)params[PARAM_SUBOSCRATIO].getValue());
     }
 
 	//pulse width modulation
