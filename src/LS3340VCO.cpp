@@ -69,6 +69,7 @@ struct LS3340VCO : Module
       configParam(LS3340VCO::PARAM_VOLSUBOSC, 0.0f, 1.0f, 0.0f, "");
       configParam(LS3340VCO::PARAM_SUBOSCRATIO, 0.0f, 2.0f, 2.0f, "");
       configParam(LS3340VCO::PARAM_VOLNOISE, 0.0f, 1.0f, 0.0f, "");
+      srand(time(0));
     }
 	void process(const ProcessArgs& args) override;
 
@@ -246,7 +247,6 @@ struct LS3340VCOWidget : ModuleWidget {
 
     	LS3340VCOWidget(LS3340VCO *module) {
         setModule(module);
-        srand(time(0));
         box.size = Vec(17 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
 		//BACKGROUND
