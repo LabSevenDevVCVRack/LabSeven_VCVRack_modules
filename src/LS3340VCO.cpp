@@ -54,6 +54,9 @@ struct LS3340VCO : Module
     LabSeven::LS3340::TLS3340VCO vco;
     LabSeven::LS3340::TLS3340VCOFrame nextFrame;
 
+    // Panel Theme
+    int Theme = 0;
+
     LS3340VCO() {
 	    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
       configParam(LS3340VCO::PARAM_MOD, 0.0f, 1.0f, 0.0f, "");
@@ -196,14 +199,69 @@ void LS3340VCO::process(const ProcessArgs& args)
                                      outputs[OUT_NOISE].getVoltage()    * params[PARAM_VOLNOISE].getValue()));
 }
 
+struct LS3340VCOClassicMenu : MenuItem {
+	LS3340VCO *ls3340vco;
+	void onAction(const event::Action &e) override {
+		ls3340vco->Theme = 0;
+	}
+	void step() override {
+		rightText = (ls3340vco->Theme == 0) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+struct LS3340VCOBlueMenu : MenuItem {
+	LS3340VCO *ls3340vco;
+	void onAction(const event::Action &e) override {
+		ls3340vco->Theme = 1;
+	}
+	void step() override {
+		rightText = (ls3340vco->Theme == 1) ? "✔" : "";
+		MenuItem::step();
+	}
+};
 
 struct LS3340VCOWidget : ModuleWidget {
+      SvgPanel *panelClassic;
+      SvgPanel *panelBlue;
+
+      void appendContextMenu(Menu *menu) override {
+        LS3340VCO *ls3340vco = dynamic_cast<LS3340VCO*>(module);
+        assert(ls3340vco);
+        menu->addChild(construct<MenuEntry>());
+        menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Theme"));
+        menu->addChild(construct<LS3340VCOClassicMenu>(&LS3340VCOClassicMenu::text, "Classic (default)", &LS3340VCOClassicMenu::ls3340vco, ls3340vco));
+        menu->addChild(construct<LS3340VCOBlueMenu>(&LS3340VCOBlueMenu::text, "Blue", &LS3340VCOBlueMenu::ls3340vco, ls3340vco));
+      }
+
+      void step() override {
+      	if (module) {
+      		LS3340VCO *ls3340vco = dynamic_cast<LS3340VCO*>(module);
+      		assert(ls3340vco);
+      		panelClassic->visible = (ls3340vco->Theme == 0);
+      		panelBlue->visible = (ls3340vco->Theme == 1);
+      	}
+      	ModuleWidget::step();
+      }
+
     	LS3340VCOWidget(LS3340VCO *module) {
         setModule(module);
         srand(time(0));
+        box.size = Vec(17 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
 		//BACKGROUND
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LabSeven_3340_VCO.svg")));
+        // Classic Theme
+        panelClassic = new SvgPanel();
+        panelClassic->box.size = box.size;
+        panelClassic->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LabSeven_3340_Classic_Skins/LabSeven_3340_VCO.svg")));
+        panelClassic->visible = true;
+        addChild(panelClassic);
+        // Blue Theme
+        panelBlue = new SvgPanel();
+        panelBlue->box.size = box.size;
+        panelBlue->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LabSeven_3340_Standard_Skins_blue/LabSeven_3340_VCO.svg")));
+        panelBlue->visible = false;
+        addChild(panelBlue);
 
 		//SCREWS
     		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
