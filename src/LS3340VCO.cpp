@@ -19,7 +19,7 @@ struct LS3340VCO : Module
 		PARAM_PWMSOURCE,
 		PARAM_VOLSQUARE,
 		PARAM_VOLSAW,
-        PARAM_VOLTRIANGLE,
+    PARAM_VOLTRIANGLE,
 		PARAM_VOLSUBOSC,
 		PARAM_SUBOSCRATIO,
 		PARAM_VOLNOISE,
@@ -54,39 +54,55 @@ struct LS3340VCO : Module
     LabSeven::LS3340::TLS3340VCO vco;
     LabSeven::LS3340::TLS3340VCOFrame nextFrame;
 
-    LS3340VCO() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-	void step() override;
+    // Panel Theme
+    int Theme = 0;
+
+    LS3340VCO() {
+	    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+      configParam(LS3340VCO::PARAM_MOD, 0.0f, 1.0f, 0.0f, "");
+      configParam(LS3340VCO::PARAM_RANGE, 0.0, 3.0, 1.0, "");
+      configParam(LS3340VCO::PARAM_PULSEWIDTH, 0.0f, 0.5f, 0.0f, "");
+      configParam(LS3340VCO::PARAM_PWMSOURCE, 0.0f, 2.0f, 1.0f, "");
+      configParam(LS3340VCO::PARAM_VOLSQUARE, 0.0f, 1.0f, 0.0f, "");
+      configParam(LS3340VCO::PARAM_VOLSAW, 0.0f, 1.0f, 0.0f, "");
+      configParam(LS3340VCO::PARAM_VOLTRIANGLE, 0.0f, 1.0f, 0.0f, "");
+      configParam(LS3340VCO::PARAM_VOLSUBOSC, 0.0f, 1.0f, 0.0f, "");
+      configParam(LS3340VCO::PARAM_SUBOSCRATIO, 0.0f, 2.0f, 2.0f, "");
+      configParam(LS3340VCO::PARAM_VOLNOISE, 0.0f, 1.0f, 0.0f, "");
+      srand(time(0));
+    }
+	void process(const ProcessArgs& args) override;
 
     float sampleTimeCurrent = 0.0;
     float sampleRateCurrent = 0.0;
 
     double pitch,maxPitch,rangeFactor;
 	// For more advanced Module features, read Rack's engine.hpp header file
-	// - toJson, fromJson: serialization of internal data
+	// - dataToJson, dataFromJson: serialization of internal data
 	// - onSampleRateChange: event triggered by a change of sample rate
 	// - onReset, onRandomize, onCreate, onDelete: implements special behavior when user clicks these from the context menu
 };
 
 
-void LS3340VCO::step()
+void LS3340VCO::process(const ProcessArgs& args)
 {
     //update external sample rate if neccessary
-    if (sampleTimeCurrent != engineGetSampleTime())
+    if (sampleTimeCurrent != args.sampleTime)
     {
-        sampleTimeCurrent = engineGetSampleTime();
+        sampleTimeCurrent = args.sampleTime;
         sampleRateCurrent = 1.0/sampleTimeCurrent;
         vco.setSamplerateExternal(sampleRateCurrent);
-		
+
 		maxPitch = sampleRateCurrent*0.45;
     	if (maxPitch > 40000) maxPitch = 40000; //high value so that suboscillator can go up to 10kHz
     }
 
 	//get pitch and pitch mod input
-    pitch = inputs[IN_PITCH].value;
-    pitch +=  pow(2,2.25*0.2*inputs[IN_MOD].value * params[PARAM_MOD].value);
+    pitch = inputs[IN_PITCH].getVoltage();
+    pitch +=  pow(2,2.25*0.2*inputs[IN_MOD].getVoltage() * params[PARAM_MOD].getValue());
 
     //set rangeFactor
-	rangeFactor = params[PARAM_RANGE].value;
+	rangeFactor = params[PARAM_RANGE].getValue();
 	switch ((int)rangeFactor)
 	{
 		case 0: rangeFactor = 0.5; break;
@@ -99,7 +115,7 @@ void LS3340VCO::step()
     //range modulation
     if (inputs[IN_RANGE].active)
     {
-        int rangeSelect = (int)round(inputs[IN_RANGE].value*0.6);
+        int rangeSelect = (int)round(inputs[IN_RANGE].getVoltage()*0.6);
         switch (rangeSelect)
         {
             case -3: rangeFactor /= 8.0; break;
@@ -112,7 +128,7 @@ void LS3340VCO::step()
         }
         if (rangeFactor > 16.0) rangeFactor = 16.0;
     }
-	
+
     //set pitch
     //TODO: Clean up this paragraph!!!
 	pitch = 261.626f * pow(2.0, pitch) * rangeFactor;
@@ -122,26 +138,26 @@ void LS3340VCO::step()
     pitch *= 1.0+0.02*((double) rand() / (RAND_MAX)-0.5);
     vco.setFrequency(pitch);
 
-	
+
 	//update suboscillator
-    switch((int)inputs[IN_SUBOSCSELECT].value)
+    switch((int)inputs[IN_SUBOSCSELECT].getVoltage())
     {
         case 1: vco.setSuboscillatorMode(0); break;
         case 2: vco.setSuboscillatorMode(1); break;
         case 3: vco.setSuboscillatorMode(2); break;
-        default: vco.setSuboscillatorMode((unsigned short)params[PARAM_SUBOSCRATIO].value);
+        default: vco.setSuboscillatorMode(2 - (unsigned short)params[PARAM_SUBOSCRATIO].getValue());
     }
 
 	//pulse width modulation
-    switch ((int)params[PARAM_PWMSOURCE].value)
+    switch ((int)params[PARAM_PWMSOURCE].getValue())
 	{
         //LFO PWM requires values between -0.4 and 0.4; SH does PWM between 10% and 90% pulse width
-        case 2:  vco.setPwmCoefficient(-2.0*params[PARAM_PULSEWIDTH].value*0.4*0.2*inputs[IN_LFO].value); break; //bipolar, -5V - +5V
-        case 1:  vco.setPwmCoefficient(-0.8*params[PARAM_PULSEWIDTH].value); break;
-        case 0:  vco.setPwmCoefficient(-2.0*params[PARAM_PULSEWIDTH].value*0.4*0.1*inputs[IN_ENV].value); break; //unipolar, 0V - +10v
-        default: vco.setPwmCoefficient(-0.8*params[PARAM_PULSEWIDTH].value);
+        case 2:  vco.setPwmCoefficient(-2.0*params[PARAM_PULSEWIDTH].getValue()*0.4*0.2*inputs[IN_LFO].getVoltage()); break; //bipolar, -5V - +5V
+        case 1:  vco.setPwmCoefficient(-0.8*params[PARAM_PULSEWIDTH].getValue()); break;
+        case 0:  vco.setPwmCoefficient(-2.0*params[PARAM_PULSEWIDTH].getValue()*0.4*0.1*inputs[IN_ENV].getVoltage()); break; //unipolar, 0V - +10v
+        default: vco.setPwmCoefficient(-0.8*params[PARAM_PULSEWIDTH].getValue());
 	}
-	
+
     //get next frame and put it out
     double scaling = 8.0;
 
@@ -162,7 +178,7 @@ void LS3340VCO::step()
         {
             //currently next neighbour interpolation, not used!
             //TODO: Add quality switch (low/medium/high) to select
-            //nn (has its own sound), cubic or sinc interpolation
+            //nn (has its own sound), dsp::cubic or sinc interpolation
             vco.getNextFrameAtExternalSampleRateCubic(&nextFrame);
         }
     }
@@ -172,63 +188,117 @@ void LS3340VCO::step()
     }
 
     //TODO: Activate/deactivate interpolation if outs are not active
-    outputs[OUT_SQUARE].value     = scaling * nextFrame.square;
-    outputs[OUT_SAW].value        = scaling * nextFrame.sawtooth;
-    outputs[OUT_SUB].value        = scaling * nextFrame.subosc;
-    outputs[OUT_TRIANGLE].value   = scaling * nextFrame.triangle;
-    outputs[OUT_NOISE].value      =          6.0* nextFrame.noise;
-    outputs[OUT_MIX].value        = 0.4*(outputs[OUT_SQUARE].value   * params[PARAM_VOLSQUARE].value +
-                                         outputs[OUT_SAW].value      * params[PARAM_VOLSAW].value +
-                                         outputs[OUT_SUB].value      * params[PARAM_VOLSUBOSC].value +
-                                         outputs[OUT_TRIANGLE].value * params[PARAM_VOLTRIANGLE].value +
-                                         outputs[OUT_NOISE].value    * params[PARAM_VOLNOISE].value);
+    outputs[OUT_SQUARE].setVoltage(scaling   * nextFrame.square);
+    outputs[OUT_SAW].setVoltage(scaling      * nextFrame.sawtooth);
+    outputs[OUT_SUB].setVoltage(scaling      * nextFrame.subosc);
+    outputs[OUT_TRIANGLE].setVoltage(scaling * nextFrame.triangle);
+    outputs[OUT_NOISE].setVoltage(6.0* nextFrame.noise);
+    outputs[OUT_MIX].setVoltage(0.4*(outputs[OUT_SQUARE].getVoltage()   * params[PARAM_VOLSQUARE].getValue() +
+                                     outputs[OUT_SAW].getVoltage()      * params[PARAM_VOLSAW].getValue() +
+                                     outputs[OUT_SUB].getVoltage()      * params[PARAM_VOLSUBOSC].getValue() +
+                                     outputs[OUT_TRIANGLE].getVoltage() * params[PARAM_VOLTRIANGLE].getValue() +
+                                     outputs[OUT_NOISE].getVoltage()    * params[PARAM_VOLNOISE].getValue()));
 }
 
+struct LS3340VCOClassicMenu : MenuItem {
+	LS3340VCO *ls3340vco;
+	void onAction(const event::Action &e) override {
+		ls3340vco->Theme = 0;
+	}
+	void step() override {
+		rightText = (ls3340vco->Theme == 0) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+struct LS3340VCOBlueMenu : MenuItem {
+	LS3340VCO *ls3340vco;
+	void onAction(const event::Action &e) override {
+		ls3340vco->Theme = 1;
+	}
+	void step() override {
+		rightText = (ls3340vco->Theme == 1) ? "✔" : "";
+		MenuItem::step();
+	}
+};
 
 struct LS3340VCOWidget : ModuleWidget {
-    LS3340VCOWidget(LS3340VCO *module) : ModuleWidget(module)
-	{
-        srand(time(0));
+      SvgPanel *panelClassic;
+      SvgPanel *panelBlue;
+
+      void appendContextMenu(Menu *menu) override {
+        LS3340VCO *ls3340vco = dynamic_cast<LS3340VCO*>(module);
+        assert(ls3340vco);
+        menu->addChild(construct<MenuEntry>());
+        menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Theme"));
+        menu->addChild(construct<LS3340VCOClassicMenu>(&LS3340VCOClassicMenu::text, "Classic (default)", &LS3340VCOClassicMenu::ls3340vco, ls3340vco));
+        menu->addChild(construct<LS3340VCOBlueMenu>(&LS3340VCOBlueMenu::text, "Blue", &LS3340VCOBlueMenu::ls3340vco, ls3340vco));
+      }
+
+      void step() override {
+      	if (module) {
+      		LS3340VCO *ls3340vco = dynamic_cast<LS3340VCO*>(module);
+      		assert(ls3340vco);
+      		panelClassic->visible = (ls3340vco->Theme == 0);
+      		panelBlue->visible = (ls3340vco->Theme == 1);
+      	}
+      	ModuleWidget::step();
+      }
+
+    	LS3340VCOWidget(LS3340VCO *module) {
+        setModule(module);
+        box.size = Vec(17 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
 		//BACKGROUND
-        setPanel(SVG::load(assetPlugin(plugin, "res/LabSeven_3340_VCO.svg")));
+        // Classic Theme
+        panelClassic = new SvgPanel();
+        panelClassic->box.size = box.size;
+        panelClassic->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LabSeven_3340_Classic_Skins/LabSeven_3340_VCO.svg")));
+        panelClassic->visible = true;
+        addChild(panelClassic);
+        // Blue Theme
+        panelBlue = new SvgPanel();
+        panelBlue->box.size = box.size;
+        panelBlue->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LabSeven_3340_Standard_Skins_blue/LabSeven_3340_VCO.svg")));
+        panelBlue->visible = false;
+        addChild(panelBlue);
 
 		//SCREWS
-		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		
+    		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+    		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+    		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+
 		//INPUTS
-        addInput(Port::create<LabSeven_Port>(Vec(114, 380-24-231+2), Port::INPUT, module, LS3340VCO::IN_PITCH));
-        addInput(Port::create<LabSeven_Port>(Vec( 75, 380-24-231+2), Port::INPUT, module, LS3340VCO::IN_MOD));
-        addInput(Port::create<LabSeven_Port>(Vec(114, 380-24-276+2), Port::INPUT, module, LS3340VCO::IN_RANGE));
-        addInput(Port::create<LabSeven_Port>(Vec(219, 380-24-284+2), Port::INPUT, module, LS3340VCO::IN_LFO));
-        addInput(Port::create<LabSeven_Port>(Vec(219, 380-24-214+2), Port::INPUT, module, LS3340VCO::IN_ENV));
-        addInput(Port::create<LabSeven_Port>(Vec(153, 380-24- 32+2), Port::INPUT, module, LS3340VCO::IN_SUBOSCSELECT));
-		
+        addInput(createInput<LabSeven_Port>(Vec(114, 380-24-231+2), module, LS3340VCO::IN_PITCH));
+        addInput(createInput<LabSeven_Port>(Vec( 75, 380-24-231+2), module, LS3340VCO::IN_MOD));
+        addInput(createInput<LabSeven_Port>(Vec(114, 380-24-276+2), module, LS3340VCO::IN_RANGE));
+        addInput(createInput<LabSeven_Port>(Vec(219, 380-24-284+2), module, LS3340VCO::IN_LFO));
+        addInput(createInput<LabSeven_Port>(Vec(219, 380-24-214+2), module, LS3340VCO::IN_ENV));
+        addInput(createInput<LabSeven_Port>(Vec(153, 380-24- 32+2), module, LS3340VCO::IN_SUBOSCSELECT));
+
         //VCO SECTION
-        addParam(ParamWidget::create<LabSeven_3340_FaderRedLargeRed>(Vec(28-4, 380-24-272), module, LS3340VCO::PARAM_MOD, 0.0f, 1.0f, 0.0f));
-        addParam(ParamWidget::create<LabSeven_3340_KnobLargeRange>(Vec(69, 380-36-266), module, LS3340VCO::PARAM_RANGE, 0.0, 3.0, 1.0));
-        addParam(ParamWidget::create<LabSeven_3340_FaderRedLargeRed>(Vec(164-4, 380-24-272), module, LS3340VCO::PARAM_PULSEWIDTH, 0.0f, 0.5f, 0.0f));
-        addParam(ParamWidget::create<LabSeven_3340_FaderRedLargeYellow3Stage>(Vec(201-4, 380-40-234), module, LS3340VCO::PARAM_PWMSOURCE, 0.0f, 2.0f, 1.0f));
-		
+        addParam(createParam<LabSeven_3340_FaderRedLargeRed>(Vec(28-4, 380-24-272), module, LS3340VCO::PARAM_MOD));
+        addParam(createParam<LabSeven_3340_KnobLargeRange>(Vec(69, 380-36-266), module, LS3340VCO::PARAM_RANGE));
+        addParam(createParam<LabSeven_3340_FaderRedLargeRed>(Vec(164-4, 380-24-272), module, LS3340VCO::PARAM_PULSEWIDTH));
+        addParam(createParam<LabSeven_3340_FaderRedLargeYellow3Stage>(Vec(201-4, 380-40-234), module, LS3340VCO::PARAM_PWMSOURCE));
+
         //SOURCE MIXER SECTION
-        addParam(ParamWidget::create<LabSeven_3340_FaderRedLargeGreen>(Vec( 28-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLSQUARE, 0.0f, 1.0f, 0.0f));
-        addParam(ParamWidget::create<LabSeven_3340_FaderRedLargeGreen>(Vec( 59-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLSAW, 0.0f, 1.0f, 0.0f));
-        addParam(ParamWidget::create<LabSeven_3340_FaderRedLargeGreen>(Vec( 90-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLTRIANGLE, 0.0f, 1.0f, 0.0f));
-        addParam(ParamWidget::create<LabSeven_3340_FaderRedLargeGreen>(Vec(121-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLSUBOSC, 0.0f, 1.0f, 0.0f));
-        addParam(ParamWidget::create<LabSeven_3340_FaderRedLargeYellow3Stage>(Vec(158-4-1, 380-40-88), module, LS3340VCO::PARAM_SUBOSCRATIO, 2.0f, 0.0f, 2.0f));
-        addParam(ParamWidget::create<LabSeven_3340_FaderRedLargeGreen>(Vec(213-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLNOISE, 0.0f, 1.0f, 0.0f));
-		
+        addParam(createParam<LabSeven_3340_FaderRedLargeGreen>(Vec( 28-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLSQUARE));
+        addParam(createParam<LabSeven_3340_FaderRedLargeGreen>(Vec( 59-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLSAW));
+        addParam(createParam<LabSeven_3340_FaderRedLargeGreen>(Vec( 90-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLTRIANGLE));
+        addParam(createParam<LabSeven_3340_FaderRedLargeGreen>(Vec(121-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLSUBOSC));
+        addParam(createParam<LabSeven_3340_FaderRedLargeYellow3Stage>(Vec(158-4-1, 380-40-88), module, LS3340VCO::PARAM_SUBOSCRATIO));
+        addParam(createParam<LabSeven_3340_FaderRedLargeGreen>(Vec(213-4, 380-20-4-125), module, LS3340VCO::PARAM_VOLNOISE));
+
 		//OUTPUTS
-        addOutput(Port::create<LabSeven_Port>(Vec( 24, 380-30-24), Port::OUTPUT, module, LS3340VCO::OUT_SQUARE));
-        addOutput(Port::create<LabSeven_Port>(Vec( 55, 380-30-24), Port::OUTPUT, module, LS3340VCO::OUT_SAW));
-        addOutput(Port::create<LabSeven_Port>(Vec(117, 380-30-24), Port::OUTPUT, module, LS3340VCO::OUT_SUB));
-        addOutput(Port::create<LabSeven_Port>(Vec( 86, 380-30-24), Port::OUTPUT, module, LS3340VCO::OUT_TRIANGLE));
-        addOutput(Port::create<LabSeven_Port>(Vec(181, 380-30-24), Port::OUTPUT, module, LS3340VCO::OUT_MIX));
-        addOutput(Port::create<LabSeven_Port>(Vec(208, 380-30-24), Port::OUTPUT, module, LS3340VCO::OUT_NOISE));
-	}
+        addOutput(createOutput<LabSeven_Port>(Vec( 24, 380-30-24), module, LS3340VCO::OUT_SQUARE));
+        addOutput(createOutput<LabSeven_Port>(Vec( 55, 380-30-24), module, LS3340VCO::OUT_SAW));
+        addOutput(createOutput<LabSeven_Port>(Vec(117, 380-30-24), module, LS3340VCO::OUT_SUB));
+        addOutput(createOutput<LabSeven_Port>(Vec( 86, 380-30-24), module, LS3340VCO::OUT_TRIANGLE));
+        addOutput(createOutput<LabSeven_Port>(Vec(181, 380-30-24), module, LS3340VCO::OUT_MIX));
+        addOutput(createOutput<LabSeven_Port>(Vec(208, 380-30-24), module, LS3340VCO::OUT_NOISE));
+     }
 };
 
 
@@ -236,4 +306,4 @@ struct LS3340VCOWidget : ModuleWidget {
 // author name for categorization per plugin, module slug (should never
 // change), human-readable module name, and any number of tags
 // (found in `include/tags.hpp`) separated by commas.
-Model *modelLS3340VCO = Model::create<LS3340VCO, LS3340VCOWidget>("LabSeven", "LS3340VCO", "LS3340-VCO", OSCILLATOR_TAG);
+Model *modelLS3340VCO = createModel<LS3340VCO, LS3340VCOWidget>("LS3340VCO");
