@@ -61,10 +61,10 @@ Algorithmic (internal) features
 
 # Version history
 
-### Version 0.6.1 (2019-02-08)
-inital release
-
 ### Version 1.0.0 (2020-01-16)
 V1 Migration
+
+### Version 0.6.1 (2019-02-08)
+inital release
 
 ### Enjoy!
