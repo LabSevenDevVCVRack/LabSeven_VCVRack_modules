@@ -61,7 +61,7 @@ Algorithmic (internal) features
 
 # Version history
 
-### Version 1.0.0 (2020-01-16)
+### Version 1.1.6.1 (2020-01-16)
 V1 Migration
 
 ### Version 0.6.1 (2019-02-08)
