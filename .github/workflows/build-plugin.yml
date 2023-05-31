@@ -2,7 +2,7 @@ name: Build VCV Rack Plugin
 on: [workflow_dispatch]
 
 env:
-  rack-sdk-version: 2.3.0
+  rack-sdk-version: "2.3.0"
 
 defaults:
   run:
