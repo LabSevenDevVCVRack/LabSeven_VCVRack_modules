@@ -53,11 +53,15 @@ jobs:
           export PLUGIN_DIR=$GITHUB_WORKSPACE
           pushd ${{ env.rack-plugin-toolchain-dir }}
           make plugin-build-${{ matrix.platform }}
+      - name: Extract slug and version
+        run: |
+          echo "PLUGIN_SLUG=$(jq -r '.slug' plugin.json)" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$(jq -r '.version' plugin.json)" >> $GITHUB_ENV
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           path: ${{ env.rack-plugin-toolchain-dir }}/plugin-build
-          name: ${{ matrix.platform }}
+          name: ${{ env.PLUGIN_SLUG }}-${{ env.PLUGIN_VERSION }}-${{ matrix.platform }}
 
   build-mac:
     name: mac
@@ -89,11 +93,15 @@ jobs:
           export CROSS_COMPILE=$CROSS_COMPILE_TARGET_${{ matrix.platform }}
           make dep
           make dist
+      - name: Extract slug and version
+        run: |
+          echo "PLUGIN_SLUG=$(jq -r '.slug' plugin.json)" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$(jq -r '.version' plugin.json)" >> $GITHUB_ENV
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           path: dist/*.vcvplugin
-          name: mac-${{ matrix.platform }}
+          name: ${{ env.PLUGIN_SLUG }}-${{ env.PLUGIN_VERSION }}-mac-${{ matrix.platform }}
 
   publish:
     name: Publish plugin
