@@ -19,19 +19,29 @@ jobs:
             name: Linux,
             os: ubuntu-latest,
             prepare-os: sudo apt update && sudo apt install -y libglu-dev,
-            os-slug: lin
+            os-slug: lin,
+            arch-slug: x64
           }
         - {
-            name: MacOS,
+            name: MacOS x64,
             os: macos-latest,
             prepare-os: "",
-            os-slug: mac
+            os-slug: mac,
+            arch-slug: x64
+          }
+        - {
+            name: MacOS ARM,
+            os: macos-latest,
+            prepare-os: "",
+            os-slug: mac,
+            arch-slug: arm64
           }
         - {
             name: Windows,
             os: windows-latest,
             prepare-os: export CC=gcc,
-            os-slug: win
+            os-slug: win,
+            arch-slug: x64
           }
     steps:
       - uses: actions/checkout@v2
@@ -40,7 +50,7 @@ jobs:
       - name: Get Rack-SDK
         run: |
           pushd $HOME
-          curl -o Rack-SDK.zip https://vcvrack.com/downloads/Rack-SDK-${{ env.rack-sdk-version }}-${{ matrix.config.os-slug }}.zip
+          curl -o Rack-SDK.zip https://vcvrack.com/downloads/Rack-SDK-${{ env.rack-sdk-version }}-${{ matrix.config.os-slug }}-${{ matrix.config.arch-slug }}.zip
           unzip Rack-SDK.zip
       - name: Build plugin
         run: |
@@ -56,5 +66,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          path: dist/${{ env.PLUGIN_SLUG }}-${{ env.PLUGIN_VERSION }}-${{ matrix.config.os-slug }}.vcvplugin
-          name: ${{ env.PLUGIN_SLUG }}-${{ env.PLUGIN_VERSION }}-${{ matrix.config.os-slug }}
+          path: dist/${{ env.PLUGIN_SLUG }}-${{ env.PLUGIN_VERSION }}-${{ matrix.config.os-slug }}-${{ matrix.config.arch-slug }}.vcvplugin
+          name: ${{ env.PLUGIN_SLUG }}-${{ env.PLUGIN_VERSION }}-${{ matrix.config.os-slug }}-${{ matrix.config.arch-slug }}
