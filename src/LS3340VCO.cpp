@@ -194,7 +194,7 @@ void LS3340VCO::process(const ProcessArgs& args)
     if (outputs[OUT_NOISE].isConnected() || outputs[OUT_MIX].isConnected())    outputs[OUT_NOISE].setVoltage(6.0f * nextFrame.noise);
 
     if (outputs[OUT_MIX].isConnected()) { 
-        outputs[OUT_MIX].setVoltage(0.4 * (outputs[OUT_SQUARE].getVoltage()   * params[PARAM_VOLSQUARE].getValue() +
+        outputs[OUT_MIX].setVoltage(0.4f * (outputs[OUT_SQUARE].getVoltage()   * params[PARAM_VOLSQUARE].getValue() +
                                            outputs[OUT_SAW].getVoltage()      * params[PARAM_VOLSAW].getValue() +
                                            outputs[OUT_SUB].getVoltage()      * params[PARAM_VOLSUBOSC].getValue() +
                                            outputs[OUT_TRIANGLE].getVoltage() * params[PARAM_VOLTRIANGLE].getValue() +
