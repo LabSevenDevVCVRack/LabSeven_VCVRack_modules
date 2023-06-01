@@ -187,17 +187,19 @@ void LS3340VCO::process(const ProcessArgs& args)
         vco.getNextBlock(&nextFrame,1);
     }
 
-    //TODO: Activate/deactivate interpolation if outs are not active
-    outputs[OUT_SQUARE].setVoltage(scaling   * nextFrame.square);
-    outputs[OUT_SAW].setVoltage(scaling      * nextFrame.sawtooth);
-    outputs[OUT_SUB].setVoltage(scaling      * nextFrame.subosc);
-    outputs[OUT_TRIANGLE].setVoltage(scaling * nextFrame.triangle);
-    outputs[OUT_NOISE].setVoltage(6.0* nextFrame.noise);
-    outputs[OUT_MIX].setVoltage(0.4*(outputs[OUT_SQUARE].getVoltage()   * params[PARAM_VOLSQUARE].getValue() +
-                                     outputs[OUT_SAW].getVoltage()      * params[PARAM_VOLSAW].getValue() +
-                                     outputs[OUT_SUB].getVoltage()      * params[PARAM_VOLSUBOSC].getValue() +
-                                     outputs[OUT_TRIANGLE].getVoltage() * params[PARAM_VOLTRIANGLE].getValue() +
-                                     outputs[OUT_NOISE].getVoltage()    * params[PARAM_VOLNOISE].getValue()));
+    if (outputs[OUT_SQUARE].isConnected() || outputs[OUT_MIX].isConnected())   outputs[OUT_SQUARE].setVoltage(scaling * nextFrame.square);
+    if (outputs[OUT_SAW].isConnected() || outputs[OUT_MIX].isConnected())      outputs[OUT_SAW].setVoltage(scaling * nextFrame.sawtooth);
+    if (outputs[OUT_SUB].isConnected() || outputs[OUT_MIX].isConnected())      outputs[OUT_SUB].setVoltage(scaling * nextFrame.subosc);
+    if (outputs[OUT_TRIANGLE].isConnected() || outputs[OUT_MIX].isConnected()) outputs[OUT_TRIANGLE].setVoltage(scaling * nextFrame.triangle);
+    if (outputs[OUT_NOISE].isConnected() || outputs[OUT_MIX].isConnected())    outputs[OUT_NOISE].setVoltage(6.0f * nextFrame.noise);
+
+    if (outputs[OUT_MIX].isConnected()) { 
+        outputs[OUT_MIX].setVoltage(0.4f * (outputs[OUT_SQUARE].getVoltage()   * params[PARAM_VOLSQUARE].getValue() +
+                                           outputs[OUT_SAW].getVoltage()      * params[PARAM_VOLSAW].getValue() +
+                                           outputs[OUT_SUB].getVoltage()      * params[PARAM_VOLSUBOSC].getValue() +
+                                           outputs[OUT_TRIANGLE].getVoltage() * params[PARAM_VOLTRIANGLE].getValue() +
+                                           outputs[OUT_NOISE].getVoltage()    * params[PARAM_VOLNOISE].getValue()));
+    }
 }
 
 struct LS3340VCOClassicMenu : MenuItem {
