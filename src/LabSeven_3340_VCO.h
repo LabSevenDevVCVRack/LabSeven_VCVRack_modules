@@ -101,7 +101,7 @@ namespace LabSeven
             }
             ~TLS3340VCOImpulseLUT()
             {
-                delete lut;
+                delete[] lut;
             }
             inline double getValAt(double position)//position without oversampling
             {
@@ -298,7 +298,7 @@ namespace LabSeven
                 }
                 ~TLS3340VCOSINCLUT()
             {
-                delete sincTable;
+                delete[] sincTable;
             }
         };
 
