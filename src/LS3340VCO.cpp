@@ -58,17 +58,29 @@ struct LS3340VCO : Module
     int Theme = 0;
 
     LS3340VCO() {
-	    config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-      configParam(LS3340VCO::PARAM_MOD, 0.0f, 1.0f, 0.0f, "");
-      configParam(LS3340VCO::PARAM_RANGE, 0.0, 3.0, 1.0, "");
-      configParam(LS3340VCO::PARAM_PULSEWIDTH, 0.0f, 0.5f, 0.0f, "");
-      configParam(LS3340VCO::PARAM_PWMSOURCE, 0.0f, 2.0f, 1.0f, "");
-      configParam(LS3340VCO::PARAM_VOLSQUARE, 0.0f, 1.0f, 0.0f, "");
-      configParam(LS3340VCO::PARAM_VOLSAW, 0.0f, 1.0f, 0.0f, "");
-      configParam(LS3340VCO::PARAM_VOLTRIANGLE, 0.0f, 1.0f, 0.0f, "");
-      configParam(LS3340VCO::PARAM_VOLSUBOSC, 0.0f, 1.0f, 0.0f, "");
-      configParam(LS3340VCO::PARAM_SUBOSCRATIO, 0.0f, 2.0f, 2.0f, "");
-      configParam(LS3340VCO::PARAM_VOLNOISE, 0.0f, 1.0f, 0.0f, "");
+      config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+      configParam(LS3340VCO::PARAM_MOD, 0.0f, 1.0f, 0.0f, "Mod");
+      configSwitch(LS3340VCO::PARAM_RANGE, 0.0, 3.0, 1.0, "Range", {"16'", "8'", "4'", "2'"});
+      configParam(LS3340VCO::PARAM_PULSEWIDTH, 0.0f, 0.5f, 0.0f, "Pulse width");
+      configSwitch(LS3340VCO::PARAM_PWMSOURCE, 0.0f, 2.0f, 1.0f, "PWM source", {"Env", "Man", "LFO"});
+      configParam(LS3340VCO::PARAM_VOLSQUARE, 0.0f, 1.0f, 0.0f, "Square volume");
+      configParam(LS3340VCO::PARAM_VOLSAW, 0.0f, 1.0f, 0.0f, "Saw volume");
+      configParam(LS3340VCO::PARAM_VOLTRIANGLE, 0.0f, 1.0f, 0.0f, "Triangle volume");
+      configParam(LS3340VCO::PARAM_VOLSUBOSC, 0.0f, 1.0f, 0.0f, "Sub osc volume");
+      configParam(LS3340VCO::PARAM_SUBOSCRATIO, 0.0f, 2.0f, 2.0f, "Sub osc ratio");
+      configParam(LS3340VCO::PARAM_VOLNOISE, 0.0f, 1.0f, 0.0f, "Noise volume");
+      configInput(IN_PITCH, "Pitch");
+      configInput(IN_MOD, "Mod");
+      configInput(IN_RANGE, "Range");
+      configInput(IN_LFO, "LFO");
+      configInput(IN_ENV, "Envelope");
+      configInput(IN_SUBOSCSELECT, "Sub osc select");
+      configOutput(OUT_SQUARE, "Square");
+      configOutput(OUT_SAW, "Saw");
+      configOutput(OUT_SUB, "Sub osc");
+      configOutput(OUT_TRIANGLE, "Triangle");
+      configOutput(OUT_MIX, "Mix");
+      configOutput(OUT_NOISE, "Noise");
       srand(time(0));
     }
 	void process(const ProcessArgs& args) override;
